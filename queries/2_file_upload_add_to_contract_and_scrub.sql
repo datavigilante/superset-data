@@ -26,7 +26,7 @@ LEFT JOIN (
             u.phone_number2,
             u.phone_number3)
         ) AS ph
-    LEFT JOIN dbo.contact c 
+    JOIN dbo.contact c 
         ON c.phone = ph.phone
     GROUP BY 
         ph.batch_name,
