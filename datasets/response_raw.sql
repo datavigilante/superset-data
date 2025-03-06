@@ -1,5 +1,5 @@
-SELECT
-    CAST(r.inserted_date AS DATE) inserted_date,    
+SELECT 
+    DATETRUNC(DAY, r.inserted_date) inserted_date,    
     JSON_VALUE(r.raw_response, '$.file_name') file_name, 
     u2.batch_name, 
     COALESCE(u2.load_status, r.load_status) load_status, 
@@ -10,6 +10,8 @@ SELECT
     u2.request_type,
     u2.updated_date,
     u2.request_status,
+    u2.dnc_status,
+    u2.facility_code,
     COUNT(DISTINCT r.response_raw_id) results,
     COUNT(DISTINCT u2.file_upload_id) uploads
 FROM dbo.response_raw r
@@ -92,7 +94,7 @@ LEFT JOIN (
     ON u2.response_raw_id = r.response_raw_id
 WHERE r.request_type IN ('add_to_contact_and_scrub', 'DELETE_RECORDS_FROM_LIST')
 GROUP BY 
-    CAST(r.inserted_date AS DATE), 
+    DATETRUNC(DAY, r.inserted_date), 
     JSON_VALUE(r.raw_response, '$.file_name'), 
     u2.batch_name, 
     COALESCE(u2.load_status, r.load_status), 
@@ -102,4 +104,6 @@ GROUP BY
     u2.file_name,
     u2.request_type,
     u2.updated_date,
-    u2.request_status
+    u2.request_status,
+    u2.dnc_status,
+    u2.facility_code
