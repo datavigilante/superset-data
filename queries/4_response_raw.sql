@@ -1,5 +1,5 @@
-SELECT
-    CAST(r.inserted_date AS DATE) inserted_date,    
+SELECT 
+    DATETRUNC(DAY, r.inserted_date) inserted_date,    
     JSON_VALUE(r.raw_response, '$.file_name') file_name, 
     u2.batch_name, 
     COALESCE(u2.load_status, r.load_status) load_status, 
@@ -10,6 +10,14 @@ SELECT
     u2.request_type,
     u2.updated_date,
     u2.request_status,
+    u2.dnc_status,
+    u2.facility_code,
+    u2.account_number,
+    u2.BusinessAcronym,
+    u2.BusinessName,
+    u2.CustNum,
+    u2.MatchLevel,
+    u2.append_request_id,
     COUNT(DISTINCT r.response_raw_id) results,
     COUNT(DISTINCT u2.file_upload_id) uploads
 FROM dbo.response_raw r
@@ -17,13 +25,11 @@ LEFT JOIN (
     SELECT u.*,
         CASE u.request_type
             WHEN 'add_to_contact_and_scrub' THEN uc.updated_date
-            WHEN 'DELETE_RECORDS_FROM_LIST' THEN dl.updated_date
-            ELSE NULL
+            ELSE dl.updated_date
         END updated_date,
         CASE u.request_type
             WHEN 'add_to_contact_and_scrub' THEN uc.request_status
-            WHEN 'DELETE_RECORDS_FROM_LIST' THEN dl.request_status
-            ELSE u.request_type    
+            ELSE dl.request_status
        END request_status
     FROM (
         SELECT 
@@ -36,7 +42,13 @@ LEFT JOIN (
             ph.file_upload_id,
             ph.phone,
             ph.file_name,
-            ph.request_type
+            ph.request_type,
+            ph.account_number,
+            c.BusinessAcronym,
+            c.BusinessName,
+            c.CustNum,
+            c.MatchLevel,
+            c.append_request_id
         FROM dbo.file_upload u
         UNPIVOT
             (phone FOR phone_num IN
@@ -56,7 +68,13 @@ LEFT JOIN (
             ph.file_upload_id, 
             ph.phone,
             ph.file_name,
-            ph.request_type
+            ph.request_type,
+            ph.account_number,
+            c.BusinessAcronym,
+            c.BusinessName,
+            c.CustNum,
+            c.MatchLevel,
+            c.append_request_id
         UNION ALL
         SELECT 
             u.batch_name,
@@ -68,7 +86,13 @@ LEFT JOIN (
             u.file_upload_id,
             u.phone_number,
             u.file_name,
-            u.request_type 
+            u.request_type,
+            NULL account_number,
+            NULL BusinessAcronym,
+            NULL BusinessName,
+            NULL CustNum,
+            NULL MatchLevel,
+            NULL append_request_id
         FROM dbo.file_upload u
         WHERE u.phone_number IS NULL
             AND u.phone_number2 IS NULL
@@ -92,9 +116,10 @@ LEFT JOIN (
       ON dl.file_upload_id = u.file_upload_id
 ) u2 
     ON u2.response_raw_id = r.response_raw_id
-WHERE r.inserted_date >= CONVERT(DATETIME, '2025-02-26T00:00:00.000', 126)
+WHERE r.request_type IN ('add_to_contact_and_scrub', 'DELETE_RECORDS_FROM_LIST')
+    AND u2.updated_date >= CONVERT(DATETIME, '2025-03-01T00:00:00.000', 126) 
 GROUP BY 
-    CAST(r.inserted_date AS DATE), 
+    DATETRUNC(DAY, r.inserted_date), 
     JSON_VALUE(r.raw_response, '$.file_name'), 
     u2.batch_name, 
     COALESCE(u2.load_status, r.load_status), 
@@ -104,4 +129,12 @@ GROUP BY
     u2.file_name,
     u2.request_type,
     u2.updated_date,
-    u2.request_status
+    u2.request_status,
+    u2.dnc_status,
+    u2.facility_code,
+    u2.account_number,
+    u2.BusinessAcronym,
+    u2.BusinessName,
+    u2.CustNum,
+    u2.MatchLevel,
+    u2.append_request_id
