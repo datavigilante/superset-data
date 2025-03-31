@@ -1,1 +1,0 @@
-SELECT * from dbo.post_request 

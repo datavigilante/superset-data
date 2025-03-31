@@ -21,13 +21,14 @@ JOIN (
         ISNULL(piv.[Small Commercial], 0) small_commercial,
         ISNULL(CASE
             WHEN piv.supervisor = 'No' AND piv.AGENT_CODE = 8979 THEN piv.Residential * 0.05
-            WHEN piv.supervisor = 'No' AND piv.AGENT_CODE <> 8979 THEN piv.Residential * 0.125
+            WHEN piv.supervisor = 'No' AND piv.AGENT_CODE <> 8979 THEN piv.Residential * 1.25
             WHEN piv.supervisor = 'Yes' THEN piv.Residential * 0.05
         END, 0) residential_commission,
         ISNULL(CASE 
             WHEN piv.supervisor = 'No' AND piv.AGENT_CODE = 8979 THEN piv.[Small Commercial] * 0.2
             WHEN piv.supervisor = 'No' AND piv.AGENT_CODE <> 8979 THEN piv.[Small Commercial] * 0.35
-            WHEN piv.supervisor = 'Yes' THEN piv.[Small Commercial] * 0.15
+            WHEN piv.supervisor = 'Yes' AND piv.AGENT_CODE = 8979 THEN piv.[Small Commercial] * 0.2
+            WHEN piv.supervisor = 'Yes' AND piv.AGENT_CODE <> 8979 THEN piv.[Small Commercial] * 0.15
         END, 0) commercial_commission  
     FROM (	
         SELECT 

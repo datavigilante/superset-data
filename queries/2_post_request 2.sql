@@ -1,1 +1,0 @@
-SELECT top 1002 * from dbo.post_request 
