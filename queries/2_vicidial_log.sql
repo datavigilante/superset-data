@@ -6,13 +6,14 @@ SELECT
     lo.processed 'Processed',
     vu.full_name 'Agent',
     lo.[status] 'Status Code',
+    lo.lead_id 'Lead ID',
     lo.phone_number 'Phone Number',
     vs.status_name 'Status Name',
     ISNULL(vs.status_name , lo.[status]) 'Status',
     pr.vendor_code 'Vendor Code',
     pr.vici_post_status 'VICI Post Status',
     pr.lead_status 'Lead Status',
-    SUM(lo.called_count) 'Called Count',
+    MAX(lo.called_count) 'Called Count',
     COUNT(DISTINCT lo.uniqueid) 'Calls'
 FROM vd.vicidial_log lo
 JOIN vd.vicidial_lists li 
@@ -20,12 +21,10 @@ JOIN vd.vicidial_lists li
     AND li.campaign_id = lo.campaign_id
 JOIN vd.vicidial_users vu 
     ON vu.[user] = lo.[user]
-JOIN vd.vicidial_campaigns vc
-    ON vc.campaign_id = lo.campaign_id   
+LEFT JOIN dbo.vicidial_request vr
+    ON vr.vicidial_lead_id = lo.lead_id   
 LEFT JOIN dbo.post_request pr
-    ON pr.vendor_campaign_name = vc.campaign_name
-    AND pr.target_vicidial_list_id = lo.list_id
-    AND pr.phone_number = lo.phone_number
+    ON pr.post_request_id = vr.post_request_id
 LEFT JOIN (
     SELECT vcs.campaign_id,
         vcs.status,
@@ -39,7 +38,7 @@ LEFT JOIN (
 ) vs 
     ON vs.status = lo.status
     AND vs.campaign_id IN (lo.campaign_id, 'N/A')
-WHERE lo.campaign_id = 'Ax_Duke1'
+WHERE lo.campaign_id = 'AX_DUKE1'
 GROUP BY CAST(lo.call_date AS DATE),
     lo.campaign_id,
     li.list_name,
@@ -47,6 +46,7 @@ GROUP BY CAST(lo.call_date AS DATE),
     lo.processed,
     vu.full_name,
     lo.status,
+    lo.lead_id,
     lo.phone_number,
     vs.status_name,
     pr.vendor_code,
